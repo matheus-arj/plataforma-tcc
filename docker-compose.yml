@@ -1,13 +1,29 @@
 version: '3.8'
 services:
-  plataforma_tcc_postgress:
+  plataforma_tcc_postgres:
     image: postgres
     container_name: plataforma_tcc_postgres
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: platform
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     ports:
-      - "5432:5432"
+      - '5432:5432'
     volumes:
       - .docker/pgdata:/var/lib/postgresql/data
+  
+  app:
+    build: .
+    container_name: plataforma_tcc_app
+    depends_on:
+      - plataforma_tcc_postgres
+    environment:
+      DB_HOST: ${DB_HOST}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      DB_PORT: ${DB_PORT}
+
+    volumes:
+      - .:/app
+    command: sh -c "until pg_isready -h $DB_HOST -p $DB_PORT; do echo waiting for postgres; sleep 2; done; node ./src/scripts/run-migrations.js"
