@@ -1,6 +1,10 @@
+import os
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import logging
-from domain.customer import CustomerDomain
-from storage.customer import CustomerStorage
+from customers.domain.customer_domain import CustomerDomain
+from customers.storage.customer_storage import CustomerStorage
 
 class CustomerService:
     def __init__(self):
