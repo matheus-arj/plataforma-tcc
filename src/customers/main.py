@@ -25,3 +25,11 @@ def hello():
 def get_customer():
     return storage.get_all()
 
+@app.post("/customers")
+async def add_customer(request: Request):
+    logging.info(f"[CUSTOMER-API] Adding new customer: {request}")
+    data = await request.json()
+    customer = CustomerDomain(data['name'], data['email'])
+    customer_id = service.add(customer)
+    logging.info(f"customer id {customer_id}")
+    return customer
