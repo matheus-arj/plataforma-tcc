@@ -33,3 +33,12 @@ async def add_customer(request: Request):
     customer_id = service.add(customer)
     logging.info(f"customer id {customer_id}")
     return customer
+
+@app.put("/customers/{customer_id}")
+async def update_customer(request: Request, customer_id: int):
+    logging.info(f"[CUSTOMER-API] Updating customer: {request}")
+    data = await request.json()
+    customer = CustomerDomain(data['name'], data['email'])
+    customer.set_id(customer_id)
+    service.update(customer)
+    return customer
