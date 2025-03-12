@@ -1,6 +1,10 @@
+import os
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import psycopg2
 import logging
-from domain.customer import CustomerDomain
+from customers.domain.customer_domain import CustomerDomain
 
 logger = logging.getLogger(__name__)
 
@@ -8,17 +12,18 @@ class CustomerStorage:
     def __init__(self):
         try:
             self.connection = psycopg2.connect(
-            host='${{ POSTGRES_HOST }}',
-            port='${{ POSTGRES_PORT }}',
-            user='${{ POSTGRES_USER }}',
-            password='${{ POSTGRES_PASSWORD }}',
-            database='${{ POSTGRES_DB }}'
-        )
+                host=os.getenv('POSTGRES_HOST'),
+                port=os.getenv('POSTGRES_PORT'),
+                user=os.getenv('POSTGRES_USER'),
+                password=os.getenv('POSTGRES_PASSWORD'),
+                database=os.getenv('POSTGRES_DB')
+            )
             self.__create()
             logger.debug('Connected to database')
 
         except Exception as e:
             logger.error(f'Error connecting to database: {e}')
+            self.connection = None
     
     def __create(self):
         if self.connection is None:
@@ -26,11 +31,11 @@ class CustomerStorage:
             return
         
         c = self.connection.cursor()
-        c.execute(''''
+        c.execute('''
             CREATE TABLE IF NOT EXISTS customers (
-                customer_id SERIAL PRIMARY KEY,
+                id SERIAL PRIMARY KEY,
                 name TEXT NOT NULL,
-                email TEXT NOT NULL,
+                email TEXT NOT NULL UNIQUE
             );
         ''')
 
@@ -43,7 +48,7 @@ class CustomerStorage:
             SELECT
                 id, name, email
             FROM
-                  customers
+                customers
             WHERE id = ?
         ''', (id,))
         customer = db.fetchone()
@@ -78,7 +83,7 @@ class CustomerStorage:
         db = self.connection.cursor()
         db.execute('''
             INSERT INTO customers (name, email)
-            VALUES (?, ?)
+            VALUES (%s, %s)
         ''', (customer.name, customer.email))
 
         self.connection.commit()
@@ -90,12 +95,10 @@ class CustomerStorage:
         db = self.connection.cursor()
         db.execute('''
             UPDATE customers
-            SET name = ?, email = ?
-            WHERE id = ?
+            SET name = %s, email = %s
+            WHERE id = %s
         ''', (customer.name, customer.email, customer.customer_id))
-        
         self.connection.commit()
-
         return db.rowcount > 0
     
     def delete(self, id: int) -> bool:
