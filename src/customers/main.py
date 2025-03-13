@@ -31,6 +31,7 @@ async def add_customer(request: Request):
     data = await request.json()
     customer = CustomerDomain(data['name'], data['email'])
     customer_id = service.add(customer)
+    customer.set_id(customer_id)
     logging.info(f"customer id {customer_id}")
     return customer
 
