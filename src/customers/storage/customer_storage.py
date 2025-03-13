@@ -81,14 +81,22 @@ class CustomerStorage:
     def add(self, customer: CustomerDomain) -> int:
         logging.debug(f"[CUSTOMER-STORAGE] Adding customer")
         db = self.connection.cursor()
-        db.execute('''
-            INSERT INTO customers (name, email)
-            VALUES (%s, %s)
-        ''', (customer.name, customer.email))
+        try:
+            db.execute('''
+                INSERT INTO customers (name, email)
+                VALUES (%s, %s)
+                RETURNING id
+            ''', (customer.name, customer.email))
 
-        self.connection.commit()
-        
-        return db.lastrowid
+            customer_id = db.fetchone()[0]
+            self.connection.commit()
+            return customer_id
+        except Exception as e:
+            self.connection.rollback()
+            logging.error(f"[CUSTOMER-STORAGE] Error adding customer: {e}")
+            raise
+        finally:
+            db.close()
 
     def update(self, customer: CustomerDomain) -> bool:
         logging.debug(f"[CUSTOMER-STORAGE] Updating customer")
